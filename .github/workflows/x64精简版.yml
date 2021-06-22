@@ -9,19 +9,17 @@ on:
         description: 'jx64'
         required: false
         default: 'false'
-  schedule:
-    - cron: 00 16 * * *
+  #schedule:
+    #- cron: 00 16 * * *
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
   CONFIG_FILE: jx64.config
   DIY_SH: bin.sh
-  UPLOAD_BIN_DIR: true
+  UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: false
   UPLOAD_RELEASE: true
-  UPLOAD_WETRANSFER: false
-  UPLOAD_COWTRANSFER: false
   TZ: Asia/Shanghai
   FILE_NAME: x64精简版
 
@@ -30,11 +28,6 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    #- name: WeChat notification #微信推送
-    #  run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}开始编译
-    - name: TG notification #TG推送
-      run: curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=${{ env.FILE_NAME }}开始编译"
-
     - name: Checkout
       uses: actions/checkout@main
 
@@ -66,6 +59,9 @@ jobs:
         echo "DATE=$(date "+%Y年%m月%d日%H时%M分")" >> $GITHUB_ENV
         echo "DATE1=$(date "+%Y.%m.%d")" >> $GITHUB_ENV
 
+    - name: WeChat notification #微信推送
+      run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}开始编译
+
     - name: Load custom configuration
       run: |
         [ -e files ] && mv files openwrt/files
@@ -73,17 +69,14 @@ jobs:
         chmod +x $DIY_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_SH
-        sed -i 's/OpenWrt/Bin AutoBuild ${{ env.DATE1 }} @ OpenWrt/g' package/lean/default-settings/files/zzz-default-settings
-        sed -i '/lede/ { s/org/org\/snapshots/g }' package/lean/default-settings/files/zzz-default-settings
-        sed -i '/openwrt_luci/ { s/sed/# sed/g; }'  package/lean/default-settings/files/zzz-default-settings
-        sed -i 's#https://mirrors.cloud.tencent.com/lede#http://256pd.top:9666/懒人版/bin#g' package/lean/default-settings/files/zzz-default-settings
+        #sed -i 's/OpenWrt/Bin AutoBuild ${{ env.DATE1 }} @ OpenWrt/g' package/lean/default-settings/files/zzz-default-settings
+        #sed -i '/lede/ { s/org/org\/snapshots/g }' package/lean/default-settings/files/zzz-default-settings
+        #sed -i '/openwrt_luci/ { s/sed/# sed/g; }'  package/lean/default-settings/files/zzz-default-settings
+        #sed -i 's#https://mirrors.cloud.tencent.com/lede#http://256pd.top:9666/懒人版/bin#g' package/lean/default-settings/files/zzz-default-settings
 
     - name: SSH connection to Actions
       uses: P3TERX/ssh2actions@v1.0.0
       if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'sshjx64')
-      env:
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
     - name: Download package
       id: package
@@ -112,10 +105,10 @@ jobs:
       run: |
         echo "${{ env.useVersionInfo }}" > openwrt/bin/targets/x86/64/${{ env.DATE }}更新说明.md
         rm -rf openwrt/bin/targets/x86/64/packages
-        tar -zcvf bin.tar.gz openwrt/bin/targets/x86/64
-        cp bin.tar.gz ./openwrt/bin/targets/x86/64/bin.tar.gz
+        #tar -zcvf bin.tar.gz openwrt/bin/targets/x86/64
+        #cp bin.tar.gz ./openwrt/bin/targets/x86/64/bin.tar.gz
         cd openwrt/bin/targets/*/*
-        rm -rf *.md
+        rm -rf *.md *info *sums *fest *kernel.bin *rootfs.img
         bzip2 *.img
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "::set-output name=status::success"
@@ -147,23 +140,6 @@ jobs:
           ${{ env.useVersionInfo }}
         artifacts: ${{ env.FIRMWARE }}/*
 
-    - name: Upload firmware to cowtransfer #奶牛快传
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer cow --block 2621440 -s -p 64 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee cowtransfer.log
-        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-
-    - name: Upload firmware to WeTransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer wet -s -p 16 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee wetransfer.log
-        echo "::warning file=wetransfer.com::$(cat wetransfer.log | grep https)"
-
-    #- name: WeChat notification #微信推送
-    #  if: steps.organize.outputs.status == 'success' && !cancelled()
-    #  run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}发布成功-编译结束
-    - name: TG notification #TG推送
+    - name: WeChat notification #微信推送
       if: steps.organize.outputs.status == 'success' && !cancelled()
-      run: curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=${{ env.FILE_NAME }}发布成功-编译结束\n${{ env.useVersionInfo }}"
+      run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}发布成功-编译结束
