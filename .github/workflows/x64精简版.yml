@@ -60,7 +60,7 @@ jobs:
         echo "DATE1=$(date "+%Y.%m.%d")" >> $GITHUB_ENV
 
     - name: WeChat notification #微信推送
-      run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}开始编译
+      run: curl https://sc.ftqq.com/${{ secrets.SERVERCHAN }}.send?text=${{ env.FILE_NAME }}开始编译
 
     - name: Load custom configuration
       run: |
@@ -107,9 +107,9 @@ jobs:
         rm -rf openwrt/bin/targets/x86/64/packages
         #tar -zcvf bin.tar.gz openwrt/bin/targets/x86/64
         #cp bin.tar.gz ./openwrt/bin/targets/x86/64/bin.tar.gz
+        cp ./openwrt/.config ./openwrt/bin/targets/x86/64/$CONFIG_FILE
         cd openwrt/bin/targets/*/*
-        rm -rf *.md *info *sums *fest *kernel.bin *rootfs.img
-        bzip2 *.img
+        rm -rf *.md *info *sums *fest *kernel.bin *rootfs.img.gz
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "::set-output name=status::success"
 
@@ -142,4 +142,4 @@ jobs:
 
     - name: WeChat notification #微信推送
       if: steps.organize.outputs.status == 'success' && !cancelled()
-      run: curl https://sc.ftqq.com/${{ secrets.ServerChan }}.send?text=${{ env.FILE_NAME }}发布成功-编译结束
+      run: curl https://sc.ftqq.com/${{ secrets.SERVERCHAN }}.send?text=${{ env.FILE_NAME }}发布成功-编译结束
