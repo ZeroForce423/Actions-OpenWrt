@@ -16,6 +16,6 @@ git clone https://github.com/binge8/luci-theme-argon-mc.git package/openwrt-pack
 git clone https://github.com/Leo-Jo-My/luci-theme-opentomcat.git package/openwrt-packages/luci-theme-opentomcat
 svn co https://github.com/0saga0/OpenClash/trunk/luci-app-openclash package/openwrt-packages/luci-app-openclash
 git clone https://github.com/lisaac/luci-app-dockerman.git package/openwrt-packages/luci-app-dockerman
-
+git clone https://github.com/destan19/OpenAppFilter.git package/openwrt-packages/OpenAppFilter
 ./scripts/feeds update -a
 ./scripts/feeds install -a
