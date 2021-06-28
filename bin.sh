@@ -9,6 +9,8 @@ sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generat
 sed -i '90d' package/system/opkg/Makefile
 #开启不可描述功能
 echo "src-git helloworld https://github.com/fw876/helloworld" >> feeds.conf.default
+#关闭无用功能
+sed -i 's/src-git telephony/#src-git telephony/g' feeds.conf.default
 
 #添加额外软件包
 #git clone https://github.com/xiaorouji/openwrt-passwall.git package/openwrt-packages/luci-app-passwall
